@@ -133,6 +133,6 @@ On the opposite (see table 2, figure 2), for videos from the group "heartbreakin
 The code is built with following libraries:
 
 - [PyTorch](https://pytorch.org/) 1.0 or higher
-- [tqdm](https://github.com/tqdm/tqdm.git)
+- [fmpeg](https://ffmpeg.org/)
 - [timm](https://github.com/rwightman/pytorch-image-models)
 - [scikit-learn](https://scikit-learn.org/stable/)

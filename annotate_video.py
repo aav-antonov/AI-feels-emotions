@@ -27,7 +27,7 @@ def makedir(path):
             os.mkdir(path)
         except:
             raise Exception("Can not create folder: {path}")
-            sys.exit(1)
+
 
 def convert_video_to_frames(file_video, folder4tmp, id_run, fps):
     if id_run != None:
@@ -45,16 +45,15 @@ def convert_video_to_frames(file_video, folder4tmp, id_run, fps):
     try:
         os.system(cmd_frames)
     except:
-        print(f"An exception occurred while converting to frames file: {file_video}\n")
-        sys.exit(1)
+        raise Exception(f"An exception occurred while converting to frames file: {file_video}\n")
+
 
     cmd_audio = f"ffmpeg -loglevel panic -i {file_video}   {output_folder}/audio.wav"
 
     try:
         os.system(cmd_audio)
     except:
-        print(f"An exception occurred while converting to audio file: {file_video}\n")
-        sys.exit(1)
+        raise Exception(f"An exception occurred while converting to frames file: {file_video}\n")
 
 
     return output_folder
@@ -190,7 +189,7 @@ def main():
         id_run = sys.argv[2]
     elif(len(sys.argv) > 3):
         print("Warning: Usage:", sys.argv[0], " <path_to_file.mp4> <path_to_tmp_folder (optional)>\n")
-        print("Ignoring arguments ", sys.argv[3:])
+        sys.exit(1)
 
     #Set fps parameter (Frame Per Second), Convert input video into frames and audio files
     fps = 10
@@ -275,7 +274,9 @@ def main():
     try:
         os.system(cmd_assemble)
     except:
-        print(f"An exception occurred \n")
+        print(f"An exception occurred while executing: \n")
+        print(cmd_assemble)
+        sys.exit(1)
 
     print("Finished")
     print(f"Annotated video: {output_folder}/output.mp4")
