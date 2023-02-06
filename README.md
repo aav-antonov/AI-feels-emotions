@@ -119,7 +119,7 @@ Table 2. Distribution of emotions in youtube videos collected with search key wo
 
 ## Results
 The video is divided into 5-second segments with a 4-second overlap. 
-For example, the YouTube video b8Iol53J_8I.mp4 (see table 1, firs row), with a total length of 595 seconds, was divided into 591 segments starting from 0, 1, 2, 3, ..., 590 seconds. 
+For example, the YouTube video b8Iol53J_8I.mp4 (see table 1, the first row), with a total length of 595 seconds, was divided into 591 segments starting from 0, 1, 2, 3, ..., 590 seconds. 
 The emotion elicited by each segment was predicted by a trained network. 
 Out of the 591 segments in b8Iol53J_8I.mp4, 57% were predicted to evoke Happiness, while only 3% were predicted to evoke Sadness.
 
