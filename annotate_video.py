@@ -117,7 +117,10 @@ def get_audio( file_audio):
 def get_audio_x(t_start, waveform, sr, args):
     clip_length = args['emotion_jumps']['clip_length']
     audio_img_param = args['dataset']['audio_img_param']
+
+    # cut waveform from interval from t_start: t_start +clip_length
     waveform = waveform[:,sr*t_start : sr*t_start+sr*clip_length]
+
     X_mel = wafeform_to_spectrogram_torch(waveform[0], sr, audio_img_param)
     X = torch.squeeze(X_mel,0)
     X = torch.unsqueeze(X, 0)
@@ -140,36 +143,31 @@ def predict( model, device,  folder4video_processing,args ):
 
     video_duration = len(list_file_frames)/fps
     print("video_duration", video_duration)
+
+    # y_pred - predicted lables
     y_pred = []
     for t_start in range(int(video_duration+1-clip_length)):
-        #print("t_start", t_start)
         sampled_frames = sorted(random.sample(list_file_frames[t_start*fps:(t_start+clip_length)*fps], video_segments))
-        #print("sampled_frames",sampled_frames)
-
 
         x_video = torch.stack([load_image_f(folder_images,ff) for ff in sampled_frames])
-
         x_video = validation_transform(x_video, img_input_size, img_output_size)
-
         x_video = torch.unsqueeze(x_video, dim=1)
         x_video = torch.unsqueeze(x_video, 0)
         x_video = torch.unsqueeze(x_video, 0)
-        #print(x_video.size())
 
         x_audio = get_audio_x(t_start, waveform, sr, args)
         x_audio = torch.unsqueeze(x_audio, 0)
         x_audio = torch.unsqueeze(x_audio, 0)
-        #print(x_audio.size())
 
         x_video = x_video.to(device)
         x_audio = x_audio.to(device)
 
-        output = model(x_video, x_audio)  # , xA
+        output = model(x_video, x_audio)
 
         _, y_pred_max = torch.max(output.data.cpu(), 1)
         y_pred.extend(y_pred_max.cpu().tolist())
 
-        #print("output", y_pred_max.size())
+
     return y_pred
 
 
@@ -184,7 +182,7 @@ def main():
 
     # Set folder for video proceccing (framing, annotating and assembling output video)
     tmp_folder = "output"
-    tmp_folder = "youtube_examples"
+    #tmp_folder = "youtube_examples"
     makedir(tmp_folder)
 
     id_run = None
@@ -203,6 +201,7 @@ def main():
     with open("checkpoint/args.json") as f:
         args = json.load(f)
 
+    #args['emotion_jumps']['clip_length'] = 3
     args['fps'] = fps
 
     #set model with parameters specified in args
@@ -231,13 +230,11 @@ def main():
     #  emotion_labels = model(video[t:t+5]), where video[t:t+5]-> 16 randomly sampled frames from [t:t+5] + audi[t:t+5]
     y_pred = predict(model, device, output_folder, args )
 
-
+    # get Freq Distribution (of  each emotion was predicted in the video)
     statW = Counter(y_pred)
-    statWE = {}
-    for e in statW:
-        statWE[EmotionNames[e]] = statW[e]
+    statWE = {EmotionNames[e]:statW[e] for e in statW}
 
-    file_emotion_stat = f'{output_folder}/emotion_statW.json\n'
+    file_emotion_stat = f'{output_folder}/emotions.json\n'
     with open(file_emotion_stat, 'w') as f:
         json.dump(statWE, f, indent=4)
 
@@ -246,42 +243,43 @@ def main():
     sliding_window = []
     sliding_window_length = 5
     IonI = IndicatorOnImage(EmotionNames, value_max=sliding_window_length)
-    jump = {}
-    for i,l in enumerate(y_pred):
-        #print("l,t:", l, i)
 
-        frame_s, frame_e = int((i + clip_length/2) * fps) , int(((i + clip_length/2) + 1) * fps)
+    for i,l in enumerate(y_pred):
+        # add incoming label to sliding_window
         sliding_window.append(l)
 
+        # remove the last label  from sliding_window
         if len(sliding_window) > sliding_window_length: del sliding_window[0]
 
-        stat = {}
-        for v in range(8):
-            stat[v] = 0
-        for v in sliding_window:
-            if v in range(8):
-                stat[v] += 1
-                if stat[v] >= sliding_window_length-1:
-                    jump[i] = EmotionNames[v]
+        # init stat
+        stat = {v:0 for v in range(8)}
 
+        for v in sliding_window:
+            if v in range(8): stat[v] += 1
+
+        # get frames in the 1 second interval to current
+        frame_s, frame_e = int((i + clip_length / 2) * fps), int(((i + clip_length / 2) + 1) * fps)
+
+        # insert Emotion Indicator Bar for frames in range(frame_s, frame_e)
         for f in range(frame_s, frame_e):
             f_str = str(f + 1).zfill(5)  # format 102 -> 000102
             file_image = f"{output_folder}/image/{f_str}.jpg"
 
+            #insert Emotion Indicator Bar into frame (file_image)
             if os.path.isfile(file_image):
                 IonI.add_on_image(file_image, stat, output_path=file_image)
 
-
-    cmd_assemble = f"ffmpeg -loglevel panic -framerate {fps} -i \"{output_folder}/image/%05d.jpg\" -i {output_folder}/audio.wav -vcodec libx265 -vf \"pad=ceil(iw/2)*2:ceil(ih/2)*2\" \"{output_folder}/output.mp4\" "
+    # assemble output video with modified frames
+    ## -vcodec libx265 add this to compress the video better
+    cmd_assemble = f"ffmpeg -loglevel panic -framerate {fps} -i \"{output_folder}/image/%05d.jpg\" -i {output_folder}/audio.wav  -vf \"pad=ceil(iw/2)*2:ceil(ih/2)*2\" \"{output_folder}/output.mp4\" "
     try:
         os.system(cmd_assemble)
     except:
         print(f"An exception occurred \n")
 
-
-    file_emotion_stat = f'{output_folder}/emotion_statJ.json\n'
-    with open(file_emotion_stat, 'w') as f:
-        json.dump(jump, f, indent=4)
+    print("Finished")
+    print(f"Annotated video: {output_folder}/output.mp4")
+    print(f"Emotion statistics: {output_folder}/emotions.json")
 
 if __name__ == '__main__':
     main()

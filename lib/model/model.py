@@ -34,7 +34,7 @@ class VCM(torch.nn.Module):
         """combines input video segments with audio and add motion modality if specified"""
         x = self.nn_X_input(x_video, x_audio)
 
-        """feature extraction by resnet"""
+        """feature extraction by resnet50"""
         x = self.nn_backbone(x)
 
         """ average accross n_sample"""

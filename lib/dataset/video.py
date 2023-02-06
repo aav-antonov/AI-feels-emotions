@@ -106,6 +106,9 @@ def validation_transform( X , img_input_size, img_output_size):
         new_size = (s, int((img_input_size * W / H)))
     else:
         new_size = ( int((s * H / W)), s)
+    #new_size = (img_input_size, img_input_size)
+    #print("validation_transform new_size", new_size)
+    #exit()
     transform_list = [T.Resize(new_size), T.CenterCrop(img_output_size)]
     transforms = torch.nn.Sequential(*transform_list)
     X = transforms(X.view((-1, C, H, W))).view( X.size()[:-3] + (C, img_output_size,img_output_size) )
