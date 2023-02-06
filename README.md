@@ -6,8 +6,7 @@ But AI defenetly can understand what emotions would humans feel while watching a
 ## Overview
 
 The deep learning neural network was trained using a dataset of 30,751 video ads, each of which was annotated by 75 individuals with the emotions they experienced while watching the video. 
-These video ads have been used to extract the dataset of short (5 seconds ) clips  
-that based on the consensus of annotators have evoked the most significant emotional response.
+These video ads have been used to extract the dataset of short (5 seconds ) clips that based on the consensus of annotators have evoked the most significant emotional response.
 So the dataset for training consisted of short 5-second clips labeled with one of  8 categories (e.g. Happiness, Sadness, Fear, Anger, etc.) based on the consensus of annotators. 
 The neural network was trained to distinguish between these clips. More details see [here](Adcumen.pdf).
 
@@ -23,11 +22,10 @@ python3 annotate_video.py <path_video_file>
 ```
 The result would be stored in "output" folder in subfolder with numeric id.
 
-## Why the annotation is done with random weights   
+## Why the annotation is done with random weights?   
 The trained network weights for emotion recognition cannot be shared due to the intellectual property issues. 
 **If you run the code, the annotation will be done using random weights!!!**. 
 To give you an idea of the quality of annotation, several examples of videos annotated using the trained Neural Network have been included.
-
  
 
 ## Example of videos annotated with trained network 
